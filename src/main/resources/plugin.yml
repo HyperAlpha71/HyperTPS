@@ -1,0 +1,23 @@
+name: HyperTPS
+version: '1.0-SNAPSHOT'
+main: org.pluginfile.hyperTPS.HyperTPS
+api-version: '1.20'
+authors: [ HyperAlpha71 ]
+description: HyperTPS bir lag monitörü plugini olarak faaliyet göstermektedir.
+
+commands:
+  sunucu:
+    description: Sunucunun TPS ve sistem bilgilerini görüntüler
+    usage: /sunucu
+  gecikme:
+    description: Sunucuda gecikme kontrolleri yapar.
+    usage: /gecikme
+  durum:
+    description: Sunucu istatistiklerini getirir.
+    usage: /durum
+  oyuncubilgi:
+    description: Belirli bir oyuncunun veri bilgilerini getirir.
+    usage: /oyuncubilgi <oyuncuAdı>
+  oyuncuip:
+    description: Belirli bir oyunucunun ip adresi bilgilerini getirir.
+    usage: /oyuncuip <oyuncuAdı>

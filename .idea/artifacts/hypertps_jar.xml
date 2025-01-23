@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="hypertps:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/hypertps_jar</output-path>
+    <root id="archive" name="hypertps.jar">
+      <element id="module-output" name="hypertps" />
+    </root>
+  </artifact>
+</component>
