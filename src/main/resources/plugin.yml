@@ -21,3 +21,6 @@ commands:
   oyuncuip:
     description: Belirli bir oyunucunun ip adresi bilgilerini getirir.
     usage: /oyuncuip <oyuncuAdı>
+  agbilgisi:
+    description: Sunucunun detaylı ağ bilgisini verir.
+    usage: /agbilgisi
