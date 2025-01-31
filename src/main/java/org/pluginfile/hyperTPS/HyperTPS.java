@@ -26,84 +26,135 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class HyperTPS extends JavaPlugin implements Listener {
    private final SystemInfo systemInfo = new SystemInfo();
+   private LagInfo lagInfo; // LagInfo nesnesini tanımla
 
    public void onEnable() {
       Bukkit.getPluginManager().registerEvents(this, this);
+      this.lagInfo = new LagInfo(this); // LagInfo nesnesini oluştur
+      Bukkit.getPluginManager().registerEvents(this.lagInfo, this); // LagInfo'yu event listener olarak kaydet
       this.getLogger().info("\ud83d\udd35 Gelistirici: HyperAlpha71");
       this.getLogger().info("✅ Plugin Aktif Edildi.");
    }
 
    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
       Player target;
+
+      // /sunucu komutu
       if (command.getName().equalsIgnoreCase("sunucu")) {
          if (sender instanceof Player) {
-            target = (Player)sender;
+            target = (Player) sender;
             this.openAsyncServerInfo(target);
          } else {
-            sender.sendMessage(String.valueOf(ChatColor.RED) + "Bu komut yalnızca oyuncular tarafından kullanılabilir!");
+            sender.sendMessage(ChatColor.RED + "Bu komut yalnızca oyuncular tarafından kullanılabilir!");
+         }
+         return true;
+      }
+
+      if (!(sender instanceof Player)) {
+         sender.sendMessage(ChatColor.RED + "Bu komut yalnızca oyuncular tarafından kullanılabilir!");
+         return true;
+      }
+
+      Player player = (Player) sender;
+
+      if (command.getName().equalsIgnoreCase("laginfo")) {
+         // LagInfo GUI'sini aç
+         this.lagInfo.openLagInfoGUI(player);
+
+         // Oyuncuya bilgi mesajı gönder
+         player.sendMessage("☑ " + "Sunucu performans bilgileri yükleniyor...");
+         return true;
+      }
+
+      // /durum komutu
+      if (command.getName().equalsIgnoreCase("durum")) {
+         ServerStatus.execute(sender); // ServerStatus sınıfı üzerinden verileri al ve işle
+         return true;
+      }
+
+      if (!(sender instanceof Player)) {
+         sender.sendMessage(ChatColor.RED + "Bu komut yalnızca oyuncular tarafından kullanılabilir!");
+         return true;
+      }
+
+      if (!(sender instanceof Player)) {
+         sender.sendMessage("Bu komut yalnızca oyuncular tarafından kullanılabilir!");
+         return true;
+      }
+
+   // /reload komutu
+      if (command.getName().equalsIgnoreCase("reload")) {
+         if (!sender.hasPermission("hypertps.reload")) {
+            sender.sendMessage(ChatColor.RED + "Bu komutu kullanma izniniz yok!");
+            return true;
          }
 
-         return true;
-      } else if (command.getName().equalsIgnoreCase("agbilgisi") && sender instanceof Player) {
-         target = (Player)sender;
-         NetworkInfo.execute(target);
-         return true;
-      } else {
-         String playerName;
-         if (command.getName().equalsIgnoreCase("gecikme")) {
-            playerName = this.measureLag();
-            sender.sendMessage(String.valueOf(ChatColor.AQUA) + "[HyperTPS] Gecikme Durumu:");
-            sender.sendMessage(playerName);
-            return true;
-         } else if (command.getName().equalsIgnoreCase("durum")) {
-            if (sender instanceof Player) {
-               ServerStatus.execute(sender);
-            } else {
-               sender.sendMessage(String.valueOf(ChatColor.RED) + "Bu komut yalnızca oyuncular içindir!");
-            }
+         sender.sendMessage(ChatColor.YELLOW + "HyperTPS eklentisi yeniden yükleniyor...");
 
-            return true;
-         } else if (command.getName().equalsIgnoreCase("oyuncubilgi")) {
-            if (args.length == 1) {
-               playerName = args[0];
-               String playerData = this.getPlayerData(playerName);
-               sender.sendMessage(String.valueOf(ChatColor.DARK_GREEN) + "[HyperTPS] Oyuncu Bilgileri:");
-               sender.sendMessage(playerData);
-            } else {
-               sender.sendMessage(String.valueOf(ChatColor.RED) + "Kullanım: /oyuncubilgi <oyuncu_adi>");
+         Bukkit.getScheduler().runTask(this, () -> {
+            try {
+               Bukkit.getPluginManager().disablePlugin(this);
+               Bukkit.getPluginManager().enablePlugin(this);
+               sender.sendMessage(ChatColor.GREEN + "HyperTPS eklentisi başarıyla yeniden yüklendi!");
+            } catch (Exception e) {
+               sender.sendMessage(ChatColor.RED + "Eklenti yeniden yüklenirken bir hata oluştu.");
+               getLogger().severe("HyperTPS eklentisi yeniden yüklenirken hata: " + e.getMessage());
             }
+         });
+         return true;
+      }
 
+      // /agbilgisi komutu
+      if (command.getName().equalsIgnoreCase("agbilgisi") && sender instanceof Player) {
+         target = (Player) sender;
+         NetworkInfo.execute(target); // NetworkInfo sınıfı çözüldü
+         return true;
+      }
+
+      // /oyuncubilgi komutu
+      if (command.getName().equalsIgnoreCase("oyuncubilgi")) {
+         if (args.length == 1) {
+            String playerName = args[0];
+            String playerData = this.getPlayerData(playerName);
+            sender.sendMessage(ChatColor.DARK_GREEN + "[HyperTPS] Oyuncu Bilgileri:");
+            sender.sendMessage(playerData);
+         } else {
+            sender.sendMessage(ChatColor.RED + "Kullanım: /oyuncubilgi <oyuncu_adi>");
+         }
+         return true;
+      }
+
+      // /oyuncuip komutu
+      if (command.getName().equalsIgnoreCase("oyuncuip")) {
+         if (!sender.hasPermission("hypertps.oyuncuip")) {
+            sender.sendMessage(ChatColor.RED + "Bu komutu kullanma yetkiniz yok!");
             return true;
-         } else if (command.getName().equalsIgnoreCase("oyuncuip")) {
-            if (!sender.hasPermission("hypertps.oyuncuip")) {
-               sender.sendMessage(String.valueOf(ChatColor.RED) + "Bu komutu kullanma yetkiniz yok!");
-               return true;
-            } else if (args.length == 0) {
-               sender.sendMessage(String.valueOf(ChatColor.RED) + "Lütfen bir oyuncu kullanıcı adı giriniz! Kullanım: /oyuncuip <oyuncuAdı>");
-               return true;
-            } else {
-               target = Bukkit.getPlayer(args[0]);
-               if (target != null && target.isOnline()) {
-                  InetSocketAddress address = target.getAddress();
-                  if (address == null) {
-                     sender.sendMessage(String.valueOf(ChatColor.RED) + "Oyuncunun IP adresi alınamadı.");
-                     return true;
-                  } else {
-                     String ip = address.getAddress().getHostAddress();
-                     int port = address.getPort();
-                     this.sendPlayerInfo(sender, target.getName(), ip, port);
-                     return true;
-                  }
+         } else if (args.length == 0) {
+            sender.sendMessage(ChatColor.RED + "Lütfen bir oyuncu kullanıcı adı giriniz! Kullanım: /oyuncuip <oyuncuAdı>");
+            return true;
+         } else {
+            target = Bukkit.getPlayer(args[0]);
+            if (target != null && target.isOnline()) {
+               InetSocketAddress address = target.getAddress();
+               if (address == null) {
+                  sender.sendMessage(ChatColor.RED + "Oyuncunun IP adresi alınamadı.");
+                  return true;
                } else {
-                  sender.sendMessage(String.valueOf(ChatColor.RED) + "Oyuncu bulunamadı veya çevrimdışı.");
+                  String ip = address.getAddress().getHostAddress();
+                  int port = address.getPort();
+                  this.sendPlayerInfo(sender, target.getName(), ip, port);
                   return true;
                }
+            } else {
+               sender.sendMessage(ChatColor.RED + "Oyuncu bulunamadı veya çevrimdışı.");
+               return true;
             }
-         } else {
-            sender.sendMessage(String.valueOf(ChatColor.RED) + "Bilinmeyen komut. Mevcut komutlar: /sunucu, /gecikme, /durum, /oyuncubilgi, /geoip");
-            return false;
          }
       }
+
+      // Bilinmeyen komut
+      sender.sendMessage(ChatColor.RED + "Bilinmeyen komut. Mevcut komutlar: /sunucu, /gecikme, /agbilgisi, /oyuncubilgi, /oyuncuip, /reload");
+      return false;
    }
 
    private void openAsyncServerInfo(Player player) {
@@ -165,13 +216,6 @@ public class HyperTPS extends JavaPlugin implements Listener {
       }
 
       return item;
-   }
-
-   private String measureLag() {
-      double tps = 20.0D;
-      double mspt = 1000.0D / tps;
-      String var10000 = String.valueOf(ChatColor.GREEN);
-      return var10000 + String.format("TPS: %.2f", tps) + String.valueOf(ChatColor.YELLOW) + ", MSPT: " + String.valueOf(ChatColor.AQUA) + String.format("%.2f ms", mspt);
    }
 
    private void sendPlayerInfo(CommandSender sender, String playerName, String ip, int port) {
@@ -251,36 +295,6 @@ public class HyperTPS extends JavaPlugin implements Listener {
          var10000 = String.valueOf(ChatColor.RED);
          return var10000 + "❌ " + playerName + " isimli oyuncu bulunamadı.";
       }
-   }
-
-   private String parseGeoResponse(String response) {
-      try {
-         StringBuilder result = new StringBuilder();
-         String[] var3 = response.split(",");
-         int var4 = var3.length;
-
-         for(int var5 = 0; var5 < var4; ++var5) {
-            String line = var3[var5];
-            if (line.contains(":")) {
-               String[] keyValue = line.split(":", 2);
-               String key = keyValue[0].replace("\"", "").trim();
-               String value = keyValue[1].replace("\"", "").trim();
-               if (!key.equalsIgnoreCase("status") && !key.equalsIgnoreCase("message")) {
-                  result.append(ChatColor.GREEN).append(key).append(": ").append(ChatColor.YELLOW).append(value).append("\n");
-               }
-            }
-         }
-
-         return result.toString();
-      } catch (Exception var10) {
-         String var10000 = String.valueOf(ChatColor.RED);
-         return var10000 + "❌ İşlenirken hata oluştu: " + var10.getMessage();
-      }
-   }
-
-   private boolean isValidIP(String ip) {
-      String ipRegex = "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
-      return ip != null && ip.matches(ipRegex);
    }
 
    @EventHandler

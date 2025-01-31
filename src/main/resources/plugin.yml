@@ -9,9 +9,9 @@ commands:
   sunucu:
     description: Sunucunun TPS ve sistem bilgilerini görüntüler
     usage: /sunucu
-  gecikme:
-    description: Sunucuda gecikme kontrolleri yapar.
-    usage: /gecikme
+  laginfo:
+    description: Sunucuya bağlı olan oyuncuların TPS ve sistem bilgilerini görüntüler.
+    usage: /laginfo
   durum:
     description: Sunucu istatistiklerini getirir.
     usage: /durum
@@ -24,3 +24,12 @@ commands:
   agbilgisi:
     description: Sunucunun detaylı ağ bilgisini verir.
     usage: /agbilgisi
+  reload:
+    description: HyperTPS eklentisini yeniden yükler.
+    usage: /reload
+    permission: hypertps.reload
+
+permissions:
+  hypertps.reload:
+    description: Eklenti yeniden yükleme komutunu kullanma izni.
+    default: op
